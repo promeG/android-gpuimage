@@ -25,6 +25,7 @@ import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView.Renderer;
+import android.util.Log;
 
 import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
 
@@ -36,12 +37,16 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE_NO_ROTATION;
 
 @TargetApi(11)
 public class GPUImageRenderer implements Renderer, PreviewCallback {
+
+    private static final String TAG = "GPUImageRenderer";
     public static final int NO_IMAGE = -1;
     static final float CUBE[] = {
             -1.0f, -1.0f,
@@ -91,6 +96,8 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
 
     @Override
     public void onSurfaceCreated(final GL10 unused, final EGLConfig config) {
+        Log.d(TAG, "onSurfaceCreated() called with: " + "unused = [" + unused + "], config = ["
+                + config + "]");
         GLES20.glClearColor(0, 0, 0, 1);
         GLES20.glDisable(GLES20.GL_DEPTH_TEST);
         mFilter.init();
@@ -98,6 +105,8 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
 
     @Override
     public void onSurfaceChanged(final GL10 gl, final int width, final int height) {
+        Log.d(TAG, "onSurfaceChanged() called with: " + "gl = [" + gl + "], width = [" + width
+                + "], height = [" + height + "]");
         mOutputWidth = width;
         mOutputHeight = height;
         GLES20.glViewport(0, 0, width, height);
@@ -111,6 +120,7 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
 
     @Override
     public void onDrawFrame(final GL10 gl) {
+        Log.d(TAG, "onDrawFrame() called with: " + "gl = [" + gl + "]");
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         runAll(mRunOnDraw);
         mFilter.onDraw(mGLTextureId, mGLCubeBuffer, mGLTextureBuffer);
@@ -128,8 +138,11 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
         }
     }
 
+
+
     @Override
     public void onPreviewFrame(final byte[] data, final Camera camera) {
+        Log.d(TAG, "onPreviewFrame() called with: " + "data = [" + data.length + "]");
         final Size previewSize = camera.getParameters().getPreviewSize();
         if (mGLRgbBuffer == null) {
             mGLRgbBuffer = IntBuffer.allocate(previewSize.width * previewSize.height);
@@ -138,8 +151,11 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
             runOnDraw(new Runnable() {
                 @Override
                 public void run() {
+                    long startT = System.nanoTime();
                     GPUImageNativeLibrary.YUVtoRBGA(data, previewSize.width, previewSize.height,
                             mGLRgbBuffer.array());
+                    Log.d(TAG, "YUVtoRBGA cost: " + TimeUnit.NANOSECONDS
+                            .toMillis(System.nanoTime() - startT));
                     mGLTextureId = OpenGlUtils.loadTexture(mGLRgbBuffer, previewSize, mGLTextureId);
                     camera.addCallbackBuffer(data);
 
@@ -337,4 +353,25 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
             mRunOnDrawEnd.add(runnable);
         }
     }
+    private static String byteArrayToString(byte[] bytes) {
+        StringBuilder builder = new StringBuilder("[");
+        for (int i = 0; i < bytes.length && builder.length() < 20; i++) {
+            if (builder.length() > 20) {
+                return builder.append("] (" + i + ":" + bytes.length + ")").toString();
+            }
+            if (i > 0) {
+                builder.append(", ");
+            }
+            builder.append(byteToString(bytes[i]));
+        }
+        return builder.append(']').toString();
+    }
+
+    private static String byteToString(Byte b) {
+        if (b == null) {
+            return "null";
+        }
+        return "0x" + String.format("%02x", b).toUpperCase(Locale.US);
+    }
+
 }

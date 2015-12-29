@@ -1,61 +1,64 @@
-apply plugin: 'com.android.library'
+apply plugin: 'com.android.model.library'
 
-android {
-    compileSdkVersion COMPILE_SDK_VERSION as int
-    buildToolsVersion BUILD_TOOLS_VERSION
+model {
+    android {
+        compileSdkVersion = 23
+        buildToolsVersion = "23.0.0"
 
-    defaultConfig {
-        minSdkVersion MIN_SDK_VERSION as int
-        targetSdkVersion TARGET_SDK_VERSION as int
+        defaultConfig.with {
+            minSdkVersion.apiLevel = 15
+            targetSdkVersion.apiLevel = 23
 
-        versionCode = VERSION_CODE
-        versionName = VERSION_NAME
-
-        ndk {
-            moduleName "gpuimage-library"
-            stl "gnustl_shared"
-            abiFilters "all"
-            ldLibs "log"
+            versionCode = VERSION_CODE
+            versionName = VERSION_NAME
         }
     }
 
-    sourceSets {
-        main {
-            manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src']
-            resources.srcDirs = ['src']
-            aidl.srcDirs = ['src']
-            renderscript.srcDirs = ['src']
-            res.srcDirs = ['res']
-            assets.srcDirs = ['assets']
-            jni.srcDirs = ['jni']
-        }
+    android.ndk {
+        moduleName = "gpuimage-library"
+        stl = "gnustl_shared"
+        //abiFilters "all"
+        ldLibs.add("log")
 
-        instrumentTest.setRoot('tests')
+    }
+    android.buildTypes {
+        release {
+            minifyEnabled = false
+            proguardFiles.add(file('proguard-rules.txt'))
+        }
+    }
+    android.productFlavors {
+        // for detailed abiFilter descriptions, refer to "Supported ABIs" @
+        // https://developer.android.com/ndk/guides/abis.html#sa
+        create("arm") {
+            ndk.abiFilters.add("armeabi")
+        }
+        create("arm7") {
+            ndk.abiFilters.add("armeabi-v7a")
+        }
+        /*create("arm8") {
+            ndk.abiFilters.add("arm64-v8a")
+        }
+        create("x86") {
+            ndk.abiFilters.add("x86")
+        }
+        create("x86-64") {
+            ndk.abiFilters.add("x86_64")
+        }
+        create("mips") {
+            ndk.abiFilters.add("mips")
+        }
+        create("mips-64") {
+            ndk.abiFilters.add("mips64")
+        }*/
+        // To include all cpu architectures, leaves abiFilters empty
+        create("all")
     }
 
-    lintOptions {
-        abortOnError false
-    }
-
-    android.libraryVariants.all { variant ->
-        if (variant.buildType.isDebuggable()) {
-            return; // Skip debug builds.
-        }
-        task("javadoc${variant.name.capitalize()}", type: Javadoc) {
-            description "Generates Javadoc for $variant.name."
-            source = variant.javaCompile.source
-            ext.androidJar = System.getenv("ANDROID_HOME") + "/platforms/${android.compileSdkVersion}/android.jar"
-            classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
-        }
-
-        task("bundleJavadoc${variant.name.capitalize()}", type: Jar) {
-            description "Bundles Javadoc into zip for $variant.name."
-            classifier = "javadoc"
-            from tasks["javadoc${variant.name.capitalize()}"]
-        }
+    android.lintOptions {
+        abortOnError = false
     }
 }
 
-apply from: 'android-artifacts.gradle'
-apply from: 'central-publish.gradle'
+//apply from: 'android-artifacts.gradle'
+//apply from: 'central-publish.gradle'
