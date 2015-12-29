@@ -1,39 +1,36 @@
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.model.application'
 
-android {
-    compileSdkVersion COMPILE_SDK_VERSION as int
-    buildToolsVersion BUILD_TOOLS_VERSION
+model {
+    android {
+        compileSdkVersion = 23
+        buildToolsVersion = "23.0.0"
 
-    defaultConfig {
-        minSdkVersion MIN_SDK_VERSION as int
-        targetSdkVersion TARGET_SDK_VERSION as int
-    }
-
-    sourceSets {
-        main {
-            manifest.srcFile 'AndroidManifest.xml'
-            java.srcDirs = ['src']
-            resources.srcDirs = ['src']
-            aidl.srcDirs = ['src']
-            renderscript.srcDirs = ['src']
-            res.srcDirs = ['res']
-            assets.srcDirs = ['assets']
+        defaultConfig.with {
+            minSdkVersion.apiLevel = 15
+            targetSdkVersion.apiLevel = 23
         }
-
-        instrumentTest.setRoot('tests')
     }
 
-    lintOptions {
-        abortOnError true
+    compileOptions.with {
+        sourceCompatibility = JavaVersion.VERSION_1_7
+        targetCompatibility = JavaVersion.VERSION_1_7
+    }
+
+    android.lintOptions {
+        abortOnError = false
     }
 }
 repositories {
     jcenter()
     maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+    flatDir {
+        dirs '../library/build/outputs/aar'
+    }
 }
 
 dependencies {
     compile project(':library')
+    compile(name:'library-all-release', ext:'aar')
 //    compile 'jp.co.cyberagent.android.gpuimage:gpuimage-library:+@aar'
     compile 'com.android.support:support-v4:21.+'
 }
