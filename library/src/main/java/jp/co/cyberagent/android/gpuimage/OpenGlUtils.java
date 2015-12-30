@@ -17,6 +17,7 @@
 package jp.co.cyberagent.android.gpuimage;
 
 import java.nio.IntBuffer;
+import java.util.concurrent.TimeUnit;
 
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -24,6 +25,8 @@ import android.hardware.Camera.Size;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.util.Log;
+
+import timber.log.Timber;
 
 public class OpenGlUtils {
     public static final int NO_TEXTURE = -1;
@@ -33,6 +36,7 @@ public class OpenGlUtils {
     }
 
     public static int loadTexture(final Bitmap img, final int usedTexId, final boolean recycle) {
+        long startT = System.nanoTime();
         int textures[] = new int[1];
         if (usedTexId == NO_TEXTURE) {
             GLES20.glGenTextures(1, textures, 0);
@@ -55,10 +59,13 @@ public class OpenGlUtils {
         if (recycle) {
             img.recycle();
         }
+        Timber.d("loadTexture1 cost: " + TimeUnit.NANOSECONDS
+                .toMillis(System.nanoTime() - startT));
         return textures[0];
     }
 
     public static int loadTexture(final IntBuffer data, final Size size, final int usedTexId) {
+        long startT = System.nanoTime();
         int textures[] = new int[1];
         if (usedTexId == NO_TEXTURE) {
             GLES20.glGenTextures(1, textures, 0);
@@ -79,6 +86,8 @@ public class OpenGlUtils {
                     size.height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, data);
             textures[0] = usedTexId;
         }
+        Timber.d("loadTexture2 cost: " + TimeUnit.NANOSECONDS
+                .toMillis(System.nanoTime() - startT));
         return textures[0];
     }
 
@@ -89,6 +98,7 @@ public class OpenGlUtils {
     }
 
     public static int loadShader(final String strSource, final int iType) {
+        long startT = System.nanoTime();
         int[] compiled = new int[1];
         int iShader = GLES20.glCreateShader(iType);
         GLES20.glShaderSource(iShader, strSource);
@@ -98,10 +108,14 @@ public class OpenGlUtils {
             Log.d("Load Shader Failed", "Compilation\n" + GLES20.glGetShaderInfoLog(iShader));
             return 0;
         }
+        Timber.d("loadShader cost: " + TimeUnit.NANOSECONDS
+                .toMillis(System.nanoTime() - startT));
         return iShader;
     }
 
     public static int loadProgram(final String strVSource, final String strFSource) {
+        long startT = System.nanoTime();
+
         int iVShader;
         int iFShader;
         int iProgId;
@@ -131,6 +145,8 @@ public class OpenGlUtils {
         }
         GLES20.glDeleteShader(iVShader);
         GLES20.glDeleteShader(iFShader);
+        Timber.d("loadProgram cost: " + TimeUnit.NANOSECONDS
+                .toMillis(System.nanoTime() - startT));
         return iProgId;
     }
 

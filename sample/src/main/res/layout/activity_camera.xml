@@ -25,6 +25,14 @@
         android:background="#000000"
         android:gravity="center_vertical"
         android:orientation="horizontal" >
+        <Button
+                android:id="@+id/button_choose_filter"
+                android:layout_height="wrap_content"
+                android:background="@android:color/white"
+                android:layout_width="50dp"
+                android:textSize="18sp"
+                android:textColor="@android:color/black"
+                android:text="@string/btn_apply" />
 
         <SeekBar
             android:id="@+id/seekBar"
@@ -32,12 +40,13 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:max="100" />
+        <TextView android:layout_width="50dp" android:layout_height="wrap_content"
+                  android:background="@android:color/white"
+                  android:textColor="@android:color/holo_blue_bright"
+                  android:gravity="center"
+                  android:textSize="18sp"
+                  android:id="@+id/tv_seekbar_value"/>
 
-        <Button
-            android:id="@+id/button_choose_filter"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Choose Filter" />
 
         <ImageButton
             android:id="@+id/button_capture"

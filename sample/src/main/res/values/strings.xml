@@ -1,6 +1,7 @@
 <resources>
 
-    <string name="app_name">GPUImage Sample</string>
-    <string name="title_activity_activity_main">GPUImage Sample</string>
+    <string name="app_name">美颜滤镜demo</string>
+    <string name="title_activity_activity_main">美颜滤镜demo</string>
+    <string name="btn_apply">开启滤镜</string>
 
 </resources>

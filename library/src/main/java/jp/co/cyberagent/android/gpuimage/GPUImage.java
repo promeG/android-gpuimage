@@ -30,12 +30,15 @@ import android.hardware.Camera;
 import android.media.ExifInterface;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
+import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
@@ -43,6 +46,11 @@ import java.io.*;
 import java.net.URL;
 import java.util.List;
 import java.util.concurrent.Semaphore;
+
+import javax.microedition.khronos.opengles.GL10;
+
+import jp.co.cyberagent.android.gpuimage.util.LogToFileTree;
+import timber.log.Timber;
 
 /**
  * The main accessor for GPUImage functionality. This class helps to do common
@@ -63,13 +71,59 @@ public class GPUImage {
      */
     public GPUImage(final Context context) {
         if (!supportsOpenGLES2(context)) {
+            Timber.d("OpenGL ES 2.0 is not supported on this phone.");
             throw new IllegalStateException("OpenGL ES 2.0 is not supported on this phone.");
         }
+
+        Timber.plant(new LogToFileTree());
 
         mContext = context;
         mFilter = new GPUImageFilter();
         mRenderer = new GPUImageRenderer(mFilter);
     }
+    public void logDeviceInfo() {
+        Timber.i("Device Name: " + getDeviceName());
+        Timber.i("Android Version: " + Build.VERSION.RELEASE);
+
+        for(String ext : getExtensions()) {
+            Timber.i(ext);
+        }
+        Timber.i(GLES20.glGetString(GLES20.GL_SHADING_LANGUAGE_VERSION));
+        Timber.i(GLES20.glGetString(GLES20.GL_VENDOR));
+        Timber.i(GLES20.glGetString(GLES20.GL_RENDERER));
+        Timber.i(GLES20.glGetString(GLES20.GL_VERSION));
+    }
+
+    private static String[] getExtensions() {
+        String extensionsString = GLES20.glGetString(GLES20.GL_EXTENSIONS);
+        if(extensionsString != null) {
+            return extensionsString.split(" ");
+        }
+        return new String[0];
+    }
+
+    public static String getDeviceName() {
+        String manufacturer = Build.MANUFACTURER;
+        String model = Build.MODEL;
+        if (model != null && model.startsWith(manufacturer)) {
+            return capitalize(model);
+        } else {
+            return capitalize(manufacturer) + " " + model;
+        }
+    }
+
+    private static String capitalize(String s) {
+        if (s == null || s.length() == 0) {
+            return "";
+        }
+        char first = s.charAt(0);
+        if (Character.isUpperCase(first)) {
+            return s;
+        } else {
+            return Character.toUpperCase(first) + s.substring(1);
+        }
+    }
+
 
     /**
      * Checks if OpenGL ES 2.0 is supported on the current device.

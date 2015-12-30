@@ -31,6 +31,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.SeekBar;
 import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -57,13 +58,20 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
     private GPUImageFilter mFilter;
     private FilterAdjuster mFilterAdjuster;
 
+    private View mCameraSwitchView;
+    private TextView mTvSeekbarView;
+    private SeekBar mSeekBar;
+
     @Override
     public void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-        ((SeekBar) findViewById(R.id.seekBar)).setOnSeekBarChangeListener(this);
+        mSeekBar = ((SeekBar) findViewById(R.id.seekBar));
+        mSeekBar.setOnSeekBarChangeListener(this);
         findViewById(R.id.button_choose_filter).setOnClickListener(this);
+        findViewById(R.id.button_capture).setVisibility(View.GONE);
         findViewById(R.id.button_capture).setOnClickListener(this);
+        mTvSeekbarView = (TextView) findViewById(R.id.tv_seekbar_value);
 
         mGPUImage = new GPUImage(this);
         mGPUImage.setGLSurfaceView((GLSurfaceView) findViewById(R.id.surfaceView));
@@ -71,10 +79,10 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
         mCameraHelper = new CameraHelper(this);
         mCamera = new CameraLoader();
 
-        View cameraSwitchView = findViewById(R.id.img_switch_camera);
-        cameraSwitchView.setOnClickListener(this);
+        mCameraSwitchView = findViewById(R.id.img_switch_camera);
+        mCameraSwitchView.setOnClickListener(this);
         if (!mCameraHelper.hasFrontCamera() || !mCameraHelper.hasBackCamera()) {
-            cameraSwitchView.setVisibility(View.GONE);
+            mCameraSwitchView.setVisibility(View.GONE);
         }
     }
 
@@ -87,6 +95,7 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
     @Override
     protected void onPause() {
         mCamera.onPause();
+        mGPUImage.logDeviceInfo();
         super.onPause();
     }
 
@@ -94,13 +103,9 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
     public void onClick(final View v) {
         switch (v.getId()) {
             case R.id.button_choose_filter:
-                GPUImageFilterTools.showDialog(this, new OnGpuImageFilterChosenListener() {
-
-                    @Override
-                    public void onGpuImageFilterChosenListener(final GPUImageFilter filter) {
-                        switchFilterTo(filter);
-                    }
-                });
+                GPUImageFilter filter = GPUImageFilterTools.createFilterForType(ActivityCamera.this, GPUImageFilterTools.FilterType.BILATERAL_BLUR);
+                switchFilterTo(filter);
+                mSeekBar.setProgress(53);
                 break;
 
             case R.id.button_capture:
@@ -226,6 +231,7 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
             final boolean fromUser) {
         if (mFilterAdjuster != null) {
             mFilterAdjuster.adjust(progress);
+            mTvSeekbarView.setText(String.valueOf(progress));
         }
     }
 
@@ -265,6 +271,8 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
                     Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
                 parameters.setFocusMode(Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
             }
+            //parameters.setPreviewSize(640, 480);
+
             mCameraInstance.setParameters(parameters);
 
             int orientation = mCameraHelper.getCameraDisplayOrientation(
