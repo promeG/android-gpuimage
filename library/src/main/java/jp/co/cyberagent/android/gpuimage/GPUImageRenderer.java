@@ -19,6 +19,7 @@ package jp.co.cyberagent.android.gpuimage;
 import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.PixelFormat;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.PreviewCallback;
@@ -194,7 +195,13 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
                 mSurfaceTexture = new SurfaceTexture(textures[0]);
                 try {
                     camera.setPreviewTexture(mSurfaceTexture);
-                    camera.setPreviewCallback(GPUImageRenderer.this);
+                    //camera.setPreviewCallback(GPUImageRenderer.this);
+                    camera.setPreviewCallbackWithBuffer(GPUImageRenderer.this);
+                    Size previewSize = camera.getParameters().getPreviewSize();
+                        PixelFormat p = new PixelFormat();
+                    PixelFormat.getPixelFormatInfo(
+                            camera.getParameters().getPreviewFormat(), p);
+                    camera.addCallbackBuffer(new byte[previewSize.width * previewSize.height * p.bitsPerPixel / 8]);
                     camera.startPreview();
                 } catch (IOException e) {
                     e.printStackTrace();

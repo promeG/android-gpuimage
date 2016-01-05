@@ -103,7 +103,7 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
     public void onClick(final View v) {
         switch (v.getId()) {
             case R.id.button_choose_filter:
-                GPUImageFilter filter = GPUImageFilterTools.createFilterForType(ActivityCamera.this, GPUImageFilterTools.FilterType.BILATERAL_BLUR);
+                GPUImageFilter filter = GPUImageFilterTools.createFilterForType(ActivityCamera.this, GPUImageFilterTools.FilterType.YOLO);
                 switchFilterTo(filter);
                 mSeekBar.setProgress(53);
                 break;

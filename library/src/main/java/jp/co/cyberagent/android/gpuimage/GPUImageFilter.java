@@ -172,7 +172,7 @@ public class GPUImageFilter {
         });
     }
 
-    protected void setFloat(final int location, final float floatValue) {
+    public void setFloat(final int location, final float floatValue) {
         runOnDraw(new Runnable() {
             @Override
             public void run() {

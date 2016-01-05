@@ -16,6 +16,7 @@
 
 package jp.co.cyberagent.android.gpuimage.sample.activity;
 
+import jp.co.cyberagent.android.gpuimage.GPUImageBilateralFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageFilter;
 import jp.co.cyberagent.android.gpuimage.GPUImageView;
 import jp.co.cyberagent.android.gpuimage.GPUImageView.OnPictureSavedListener;
@@ -27,6 +28,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.SeekBar;
@@ -36,6 +38,7 @@ import android.widget.Toast;
 public class ActivityGallery extends Activity implements OnSeekBarChangeListener,
         OnClickListener, OnPictureSavedListener {
 
+    private static final String TAG = "ActivityGallery";
     private static final int REQUEST_PICK_IMAGE = 1;
     private GPUImageFilter mFilter;
     private FilterAdjuster mFilterAdjuster;
@@ -50,6 +53,10 @@ public class ActivityGallery extends Activity implements OnSeekBarChangeListener
         findViewById(R.id.button_save).setOnClickListener(this);
 
         mGPUImageView = (GPUImageView) findViewById(R.id.gpuimage);
+
+
+        //mGPUImageView.setImage(Uri.parse("content://media/external/images/media/38312"));
+
 
         Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
         photoPickerIntent.setType("image/*");
@@ -86,6 +93,9 @@ public class ActivityGallery extends Activity implements OnSeekBarChangeListener
                     }
 
                 });
+                /*switchFilterTo(new GPUImageBilateralFilter(4.0f));
+                mGPUImageView.requestRender();*/
+
                 break;
             case R.id.button_save:
                 saveImage();
@@ -137,6 +147,7 @@ public class ActivityGallery extends Activity implements OnSeekBarChangeListener
     }
 
     private void handleImage(final Uri selectedImage) {
+        Log.d(TAG, "handleImage: " + selectedImage);
         mGPUImageView.setImage(selectedImage);
     }
 }

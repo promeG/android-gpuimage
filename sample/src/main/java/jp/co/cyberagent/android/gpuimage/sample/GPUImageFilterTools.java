@@ -22,6 +22,7 @@ import android.content.DialogInterface;
 import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import jp.co.cyberagent.android.gpuimage.*;
+import jp.co.cyberagent.android.gpuimage.sample.activity.GPUImageBeautyFilter;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -30,7 +31,9 @@ public class GPUImageFilterTools {
     public static void showDialog(final Context context,
             final OnGpuImageFilterChosenListener listener) {
         final FilterList filters = new FilterList();
-        filters.addFilter("Contrast", FilterType.CONTRAST);
+        filters.addFilter("Sobel Edge Detection", FilterType.SOBEL_EDGE_DETECTION);
+        filters.addFilter("beauty", FilterType.YOLO);
+        /* filters.addFilter("Contrast", FilterType.CONTRAST);
         filters.addFilter("Invert", FilterType.INVERT);
         filters.addFilter("Pixelation", FilterType.PIXELATION);
         filters.addFilter("Hue", FilterType.HUE);
@@ -104,7 +107,7 @@ public class GPUImageFilterTools {
 
         filters.addFilter("Color Balance", FilterType.COLOR_BALANCE);
 
-        filters.addFilter("Levels Min (Mid Adjust)", FilterType.LEVELS_FILTER_MIN);
+        filters.addFilter("Levels Min (Mid Adjust)", FilterType.LEVELS_FILTER_MIN);*/
 
         filters. addFilter("Bilateral Blur", FilterType.BILATERAL_BLUR);
 
@@ -124,6 +127,8 @@ public class GPUImageFilterTools {
 
     public static GPUImageFilter createFilterForType(final Context context, final FilterType type) {
         switch (type) {
+            case YOLO:
+                return new GPUImageBeautyFilter(4.0f);
             case CONTRAST:
                 return new GPUImageContrastFilter(2.0f);
             case GAMMA:
@@ -206,6 +211,7 @@ public class GPUImageFilterTools {
 
             case BLEND_HARD_LIGHT:
                 return createBlendFilter(context, GPUImageHardLightBlendFilter.class);
+
             case BLEND_LIGHTEN:
                 return createBlendFilter(context, GPUImageLightenBlendFilter.class);
             case BLEND_ADD:
@@ -291,7 +297,7 @@ public class GPUImageFilterTools {
                 return levelsFilter;
 
             case BILATERAL_BLUR:
-                return new GPUImageBilateralFilter();
+                return new GPUImageBilateralFilter(4.0f);
 
             default:
                 throw new IllegalStateException("No filter of that type!");
@@ -302,7 +308,7 @@ public class GPUImageFilterTools {
     private static GPUImageFilter createBlendFilter(Context context, Class<? extends GPUImageTwoInputFilter> filterClass) {
         try {
             GPUImageTwoInputFilter filter = filterClass.newInstance();
-            filter.setBitmap(BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher));
+            filter.setBitmap(BitmapFactory.decodeResource(context.getResources(), R.drawable.yolo_4_4_2));
             return filter;
         } catch (Exception e) {
             e.printStackTrace();
@@ -320,7 +326,7 @@ public class GPUImageFilterTools {
         BLEND_DISSOLVE, BLEND_EXCLUSION, BLEND_SOURCE_OVER, BLEND_HARD_LIGHT, BLEND_LIGHTEN, BLEND_ADD, BLEND_DIVIDE, BLEND_MULTIPLY, BLEND_OVERLAY, BLEND_SCREEN, BLEND_ALPHA,
         BLEND_COLOR, BLEND_HUE, BLEND_SATURATION, BLEND_LUMINOSITY, BLEND_LINEAR_BURN, BLEND_SOFT_LIGHT, BLEND_SUBTRACT, BLEND_CHROMA_KEY, BLEND_NORMAL, LOOKUP_AMATORKA,
         GAUSSIAN_BLUR, CROSSHATCH, BOX_BLUR, CGA_COLORSPACE, DILATION, KUWAHARA, RGB_DILATION, SKETCH, TOON, SMOOTH_TOON, BULGE_DISTORTION, GLASS_SPHERE, HAZE, LAPLACIAN, NON_MAXIMUM_SUPPRESSION,
-        SPHERE_REFRACTION, SWIRL, WEAK_PIXEL_INCLUSION, FALSE_COLOR, COLOR_BALANCE, LEVELS_FILTER_MIN, BILATERAL_BLUR
+        SPHERE_REFRACTION, SWIRL, WEAK_PIXEL_INCLUSION, FALSE_COLOR, COLOR_BALANCE, LEVELS_FILTER_MIN, BILATERAL_BLUR, YOLO
     }
 
     private static class FilterList {
