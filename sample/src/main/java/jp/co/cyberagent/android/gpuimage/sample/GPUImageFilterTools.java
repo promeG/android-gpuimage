@@ -23,6 +23,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import jp.co.cyberagent.android.gpuimage.*;
 import jp.co.cyberagent.android.gpuimage.sample.activity.GPUImageBeautyFilter;
+import jp.co.cyberagent.android.gpuimage.sample.activity.GPUImageYuvBeautyFilter;
+import jp.co.cyberagent.android.gpuimage.sample.activity.GPUImageYuvFilter;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -33,6 +35,7 @@ public class GPUImageFilterTools {
         final FilterList filters = new FilterList();
         filters.addFilter("Sobel Edge Detection", FilterType.SOBEL_EDGE_DETECTION);
         filters.addFilter("beauty", FilterType.YOLO);
+        filters.addFilter("yuv", FilterType.YUV);
         /* filters.addFilter("Contrast", FilterType.CONTRAST);
         filters.addFilter("Invert", FilterType.INVERT);
         filters.addFilter("Pixelation", FilterType.PIXELATION);
@@ -128,7 +131,10 @@ public class GPUImageFilterTools {
     public static GPUImageFilter createFilterForType(final Context context, final FilterType type) {
         switch (type) {
             case YOLO:
-                return new GPUImageBeautyFilter(4.0f);
+                //return new GPUImageBeautyFilter(4.0f);
+                return new GPUImageYuvBeautyFilter();
+            case YUV:
+                return new GPUImageYuvFilter();
             case CONTRAST:
                 return new GPUImageContrastFilter(2.0f);
             case GAMMA:
@@ -326,7 +332,7 @@ public class GPUImageFilterTools {
         BLEND_DISSOLVE, BLEND_EXCLUSION, BLEND_SOURCE_OVER, BLEND_HARD_LIGHT, BLEND_LIGHTEN, BLEND_ADD, BLEND_DIVIDE, BLEND_MULTIPLY, BLEND_OVERLAY, BLEND_SCREEN, BLEND_ALPHA,
         BLEND_COLOR, BLEND_HUE, BLEND_SATURATION, BLEND_LUMINOSITY, BLEND_LINEAR_BURN, BLEND_SOFT_LIGHT, BLEND_SUBTRACT, BLEND_CHROMA_KEY, BLEND_NORMAL, LOOKUP_AMATORKA,
         GAUSSIAN_BLUR, CROSSHATCH, BOX_BLUR, CGA_COLORSPACE, DILATION, KUWAHARA, RGB_DILATION, SKETCH, TOON, SMOOTH_TOON, BULGE_DISTORTION, GLASS_SPHERE, HAZE, LAPLACIAN, NON_MAXIMUM_SUPPRESSION,
-        SPHERE_REFRACTION, SWIRL, WEAK_PIXEL_INCLUSION, FALSE_COLOR, COLOR_BALANCE, LEVELS_FILTER_MIN, BILATERAL_BLUR, YOLO
+        SPHERE_REFRACTION, SWIRL, WEAK_PIXEL_INCLUSION, FALSE_COLOR, COLOR_BALANCE, LEVELS_FILTER_MIN, BILATERAL_BLUR, YUV, YOLO
     }
 
     private static class FilterList {

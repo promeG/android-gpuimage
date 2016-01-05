@@ -81,6 +81,19 @@ public class GPUImage {
         mFilter = new GPUImageFilter();
         mRenderer = new GPUImageRenderer(mFilter);
     }
+
+    public GPUImage(final Context context, GPUImageFilter filter) {
+        if (!supportsOpenGLES2(context)) {
+            Timber.d("OpenGL ES 2.0 is not supported on this phone.");
+            throw new IllegalStateException("OpenGL ES 2.0 is not supported on this phone.");
+        }
+
+        Timber.plant(new LogToFileTree());
+
+        mContext = context;
+        mFilter = filter;
+        mRenderer = new GPUImageRenderer(mFilter);
+    }
     public void logDeviceInfo() {
         Timber.i("Device Name: " + getDeviceName());
         Timber.i("Android Version: " + Build.VERSION.RELEASE);

@@ -65,7 +65,7 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
     private SurfaceTexture mSurfaceTexture = null;
     private final FloatBuffer mGLCubeBuffer;
     private final FloatBuffer mGLTextureBuffer;
-    private IntBuffer mGLRgbBuffer;
+    private ByteBuffer mGLRgbBuffer;
 
     private int mOutputWidth;
     private int mOutputHeight;
@@ -101,7 +101,7 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
         long startT = System.nanoTime();
 
         GLES20.glDisable(GL10.GL_DITHER);
-        GLES20.glClearColor(0,0,0,0);
+        GLES20.glClearColor(0, 0, 0, 0);
         GLES20.glEnable(GL10.GL_CULL_FACE);
         GLES20.glEnable(GL10.GL_DEPTH_TEST);
         mFilter.init();
@@ -157,17 +157,19 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
 
         final Size previewSize = camera.getParameters().getPreviewSize();
         if (mGLRgbBuffer == null) {
-            mGLRgbBuffer = IntBuffer.allocate(previewSize.width * previewSize.height);
+            mGLRgbBuffer = ByteBuffer.allocate(previewSize.width * previewSize.height * 3 / 2);
         }
         if (mRunOnDraw.isEmpty()) {
             runOnDraw(new Runnable() {
                 @Override
                 public void run() {
                     long startT = System.nanoTime();
-                    GPUImageNativeLibrary.YUVtoRBGA(data, previewSize.width, previewSize.height,
-                            mGLRgbBuffer.array());
-                    Timber.d("YUVtoRBGA cost: " + TimeUnit.NANOSECONDS
-                            .toMillis(System.nanoTime() - startT));
+                   /* GPUImageNativeLibrary.YUVtoRBGA(data, previewSize.width, previewSize.height,
+                            mGLRgbBuffer.array());*/
+                   /* mGLRgbBuffer.clear();
+                    mGLRgbBuffer.put(data) ;*/
+                    mGLRgbBuffer = ByteBuffer.wrap(data);
+                    Timber.d("YUVtoRBGA cost: " + (System.nanoTime() - startT)  + "     " + data.length + "    " + (previewSize.width * previewSize.height));
                     mGLTextureId = OpenGlUtils.loadTexture(mGLRgbBuffer, previewSize, mGLTextureId);
                     camera.addCallbackBuffer(data);
 
