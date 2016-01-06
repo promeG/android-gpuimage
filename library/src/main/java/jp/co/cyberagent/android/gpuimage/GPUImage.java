@@ -30,24 +30,20 @@ import android.hardware.Camera;
 import android.media.ExifInterface;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
-import android.opengl.GLES20;
+import android.opengl.GLES30;
+import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
-import android.opengl.GLUtils;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.WindowManager;
 
 import java.io.*;
 import java.net.URL;
 import java.util.List;
-import java.util.concurrent.Semaphore;
-
-import javax.microedition.khronos.opengles.GL10;
 
 import jp.co.cyberagent.android.gpuimage.util.LogToFileTree;
 import timber.log.Timber;
@@ -70,7 +66,7 @@ public class GPUImage {
      * @param context the context
      */
     public GPUImage(final Context context) {
-        if (!supportsOpenGLES2(context)) {
+        if (!supportsOpenGLES3(context)) {
             Timber.d("OpenGL ES 2.0 is not supported on this phone.");
             throw new IllegalStateException("OpenGL ES 2.0 is not supported on this phone.");
         }
@@ -83,7 +79,7 @@ public class GPUImage {
     }
 
     public GPUImage(final Context context, GPUImageFilter filter) {
-        if (!supportsOpenGLES2(context)) {
+        if (!supportsOpenGLES3(context)) {
             Timber.d("OpenGL ES 2.0 is not supported on this phone.");
             throw new IllegalStateException("OpenGL ES 2.0 is not supported on this phone.");
         }
@@ -101,14 +97,14 @@ public class GPUImage {
         for(String ext : getExtensions()) {
             Timber.i(ext);
         }
-        Timber.i(GLES20.glGetString(GLES20.GL_SHADING_LANGUAGE_VERSION));
-        Timber.i(GLES20.glGetString(GLES20.GL_VENDOR));
-        Timber.i(GLES20.glGetString(GLES20.GL_RENDERER));
-        Timber.i(GLES20.glGetString(GLES20.GL_VERSION));
+        Timber.i(GLES30.glGetString(GLES30.GL_SHADING_LANGUAGE_VERSION));
+        Timber.i(GLES30.glGetString(GLES30.GL_VENDOR));
+        Timber.i(GLES30.glGetString(GLES30.GL_RENDERER));
+        Timber.i(GLES30.glGetString(GLES30.GL_VERSION));
     }
 
     private static String[] getExtensions() {
-        String extensionsString = GLES20.glGetString(GLES20.GL_EXTENSIONS);
+        String extensionsString = GLES30.glGetString(GLES30.GL_EXTENSIONS);
         if(extensionsString != null) {
             return extensionsString.split(" ");
         }
@@ -139,17 +135,17 @@ public class GPUImage {
 
 
     /**
-     * Checks if OpenGL ES 2.0 is supported on the current device.
+     * Checks if OpenGL ES 3.0 is supported on the current device.
      *
      * @param context the context
      * @return true, if successful
      */
-    private boolean supportsOpenGLES2(final Context context) {
+    private boolean supportsOpenGLES3(final Context context) {
         final ActivityManager activityManager = (ActivityManager)
                 context.getSystemService(Context.ACTIVITY_SERVICE);
         final ConfigurationInfo configurationInfo =
                 activityManager.getDeviceConfigurationInfo();
-        return configurationInfo.reqGlEsVersion >= 0x20000;
+        return configurationInfo.reqGlEsVersion >= 0x30000;
     }
 
     /**
@@ -159,7 +155,7 @@ public class GPUImage {
      */
     public void setGLSurfaceView(final GLSurfaceView view) {
         mGlSurfaceView = view;
-        mGlSurfaceView.setEGLContextClientVersion(2);
+        mGlSurfaceView.setEGLContextClientVersion(3);
         mGlSurfaceView.setEGLConfigChooser(8, 8, 8, 8, 16, 0);
         mGlSurfaceView.getHolder().setFormat(PixelFormat.RGBA_8888);
         mGlSurfaceView.setRenderer(mRenderer);

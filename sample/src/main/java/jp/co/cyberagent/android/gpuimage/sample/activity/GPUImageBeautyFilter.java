@@ -6,7 +6,7 @@
 
 package jp.co.cyberagent.android.gpuimage.sample.activity;
 
-import android.opengl.GLES20;
+import android.opengl.GLES30;
 
 import java.util.concurrent.TimeUnit;
 
@@ -158,23 +158,23 @@ public class GPUImageBeautyFilter extends GPUImageTwoPassTextureSamplingFilter {
 
 	float ratio = getHorizontalTexelOffsetRatio();
 	GPUImageFilter filter = mFilters.get(0);
-	int distanceNormalizationFactor = GLES20.glGetUniformLocation(filter.getProgram(), "distanceNormalizationFactor");
+	int distanceNormalizationFactor = GLES30.glGetUniformLocation(filter.getProgram(), "distanceNormalizationFactor");
 	filter.setFloat(distanceNormalizationFactor, this.distanceNormalizationFactor);
 
-	int texelWidthOffsetLocation = GLES20.glGetUniformLocation(filter.getProgram(), "texelWidthOffset");
-	int texelHeightOffsetLocation = GLES20.glGetUniformLocation(filter.getProgram(), "texelHeightOffset");
+	int texelWidthOffsetLocation = GLES30.glGetUniformLocation(filter.getProgram(), "texelWidthOffset");
+	int texelHeightOffsetLocation = GLES30.glGetUniformLocation(filter.getProgram(), "texelHeightOffset");
 	filter.setFloat(texelWidthOffsetLocation, ratio / mOutputWidth);
 	filter.setFloat(texelHeightOffsetLocation, 0);
 
 
 	ratio = getVerticalTexelOffsetRatio();
 	filter = mFilters.get(1);
-	distanceNormalizationFactor = GLES20.glGetUniformLocation(filter.getProgram(), "distanceNormalizationFactor");
+	distanceNormalizationFactor = GLES30.glGetUniformLocation(filter.getProgram(), "distanceNormalizationFactor");
 	filter.setFloat(distanceNormalizationFactor, this.distanceNormalizationFactor);
 
 
-	texelWidthOffsetLocation = GLES20.glGetUniformLocation(filter.getProgram(), "texelWidthOffset");
-	texelHeightOffsetLocation = GLES20.glGetUniformLocation(filter.getProgram(), "texelHeightOffset");
+	texelWidthOffsetLocation = GLES30.glGetUniformLocation(filter.getProgram(), "texelWidthOffset");
+	texelHeightOffsetLocation = GLES30.glGetUniformLocation(filter.getProgram(), "texelHeightOffset");
 
 	filter.setFloat(texelWidthOffsetLocation, 0);
 	filter.setFloat(texelHeightOffsetLocation, ratio / mOutputHeight);

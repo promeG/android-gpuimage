@@ -117,6 +117,9 @@ JNIEXPORT void JNICALL Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibr
     (*env)->ReleasePrimitiveArrayCritical(env, yuv420sp, yuv, 0);
 }
 
+GLuint pbo_id;
+jboolean init = 0;
+
 JNIEXPORT void JNICALL
 Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_readPixels(JNIEnv *env, jclass type,
                                                                         jint width, jint height,
@@ -124,21 +127,25 @@ Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_readPixels(JNIEnv *
     jbyte *out = (*env)->GetByteArrayElements(env, out_, NULL);
 
     // TODO
-    int * pbo_id;
     int pbo_size = width * height * 4;
 
-    glGenBuffers(1, &pbo_id);
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo_id);
-    glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, 0, GL_DYNAMIC_READ);
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+    if (!init) {
+        glGenBuffers(1, &pbo_id);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo_id);
+        glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, 0, GL_DYNAMIC_READ);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+        init = 1;
+    }
 
     glReadBuffer(GL_COLOR_ATTACHMENT0);
     glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo_id);
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-    GLubyte *ptr = glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, pbo_size, GL_MAP_READ_BIT);
+   /* GLubyte *ptr = glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, pbo_size, GL_MAP_READ_BIT);
     memcpy(out, ptr, pbo_size);
-    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);
+    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);*/
     glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+    //glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, out);
 
     (*env)->ReleaseByteArrayElements(env, out_, out, 0);
 }
