@@ -24,4 +24,6 @@ public class GPUImageNativeLibrary {
     public static native void YUVtoRBGA(byte[] yuv, int width, int height, int[] out);
 
     public static native void YUVtoARBG(byte[] yuv, int width, int height, int[] out);
+
+    public static native void readPixels(int width, int height, byte[] out);
 }

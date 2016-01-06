@@ -19,12 +19,14 @@ package jp.co.cyberagent.android.gpuimage;
 import android.annotation.SuppressLint;
 import android.opengl.GLES20;
 import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
+import timber.log.Timber;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static jp.co.cyberagent.android.gpuimage.GPUImageRenderer.CUBE;
 import static jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil.TEXTURE_NO_ROTATION;
@@ -147,7 +149,6 @@ public class GPUImageFilterGroup extends GPUImageFilter {
             size = mMergedFilters.size();
             mFrameBuffers = new int[size - 1];
             mFrameBufferTextures = new int[size - 1];
-
             for (int i = 0; i < size - 1; i++) {
                 GLES20.glGenFramebuffers(1, mFrameBuffers, i);
                 GLES20.glGenTextures(1, mFrameBufferTextures, i);
@@ -200,6 +201,23 @@ public class GPUImageFilterGroup extends GPUImageFilter {
                 if (i == 0) {
                     filter.onDraw(previousTexture, cubeBuffer, textureBuffer);
                 } else if (i == size - 1) {
+                    if (false && mImageListener != null) {
+                        long startT = System.nanoTime();
+
+                        int width = mOutputWidth;
+                        int height = mOutputHeight;
+                        ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 4);
+                        buf.order(ByteOrder.LITTLE_ENDIAN);
+                        GLES20.glReadPixels(0, 0, width, height,
+                                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+                        OpenGlUtils.dumpGlError("glReadPixels");
+                        buf.rewind();
+                        mImageListener.beforeLastFilterImgAvalible(buf);
+                        Timber.d("glReadPixels cost: " + TimeUnit.NANOSECONDS.toMillis(
+                                System.nanoTime() - startT));
+                    }
+
+
                     filter.onDraw(previousTexture, mGLCubeBuffer, (size % 2 == 0) ? mGLTextureFlipBuffer : mGLTextureBuffer);
                 } else {
                     filter.onDraw(previousTexture, mGLCubeBuffer, mGLTextureBuffer);

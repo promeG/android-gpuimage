@@ -67,8 +67,55 @@ public class OpenGlUtils {
         return textures[0];
     }
     private static final int GL_TEXTURE_EXTERNAL_OES = 0x8D65;
+    public static  void dumpGlError(String op) {
+        int error;
+        while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR)
+            Timber.d("** " + op + ": glError " + error);
+    }
 
 
+
+    public static int loadFrameTexture(final ByteBuffer data, final Size size, int usedTexId) {
+        Timber.d("createFramebufferObject, tex id:" + usedTexId);
+
+        int[] textures = new int[1];
+        if (usedTexId == NO_TEXTURE) {
+            GLES20.glGenFramebuffers(1, textures, 0);
+            dumpGlError("glGenFramebuffers");
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, textures[0]);
+            dumpGlError("glBindFramebuffer");
+            // Qualcomm recommends clear after glBindFrameBuffer().
+            GLES20.glClearColor(0.643f, 0.776f, 0.223f, 1.0f);
+            GLES20.glClearDepthf(1.0f);
+
+            ////////////////////////////////////////////////////////////////////////
+            // Bind the texture to the generated Framebuffer Object.
+            GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER,
+                    GLES20.GL_COLOR_ATTACHMENT0,
+                    GL_TEXTURE_EXTERNAL_OES,
+                    usedTexId,
+                    0);
+        } else {
+            GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, textures[0]);
+            // Qualcomm recommends clear after glBindFrameBuffer().
+            GLES20.glClearColor(0.643f, 0.776f, 0.223f, 1.0f);
+            GLES20.glClearDepthf(1.0f);
+            GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER,
+                    GLES20.GL_COLOR_ATTACHMENT0,
+                    GL_TEXTURE_EXTERNAL_OES,
+                    usedTexId,
+                    0);
+            textures[0] = usedTexId;
+        }
+        dumpGlError("glFramebufferTexture2D");
+        if (GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER) !=
+                GLES20.GL_FRAMEBUFFER_COMPLETE) {
+            Timber.d(" Created FBO and attached to texture");
+        } else {
+            Timber.d( " FBO created and attached to texture.");
+        }
+        return textures[0];
+    }
 
     public static int loadTexture(final ByteBuffer data, final Size size, final int usedTexId) {
         long startT = System.nanoTime();
@@ -86,11 +133,12 @@ public class OpenGlUtils {
                     GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
             GLES20.glTexImage2D(GL_TEXTURE_EXTERNAL_OES, 0, GLES20.GL_LUMINANCE, size.width,
                     size.height, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, data);
+
            /* bindTexture(usedTexId);
             GLES20.glUniform1i(usedTexId, 0);*/
         } else {
             GLES20.glBindTexture(GL_TEXTURE_EXTERNAL_OES, usedTexId);
-            GLES20.glTexSubImage2D(GL_TEXTURE_EXTERNAL_OES, 0, 0, 0, size.width,
+            GLES20.glTexSubImage2D(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, 0, 0, 0, size.width,
                     size.height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, data);
             textures[0] = usedTexId;
         }

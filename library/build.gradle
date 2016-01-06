@@ -19,6 +19,7 @@ model {
         stl = "gnustl_shared"
         //abiFilters "all"
         ldLibs.add("log")
+        ldLibs.add("GLESv3")
 
     }
     android.buildTypes {

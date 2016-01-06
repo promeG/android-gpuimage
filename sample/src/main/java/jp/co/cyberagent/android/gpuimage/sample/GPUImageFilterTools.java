@@ -25,6 +25,7 @@ import jp.co.cyberagent.android.gpuimage.*;
 import jp.co.cyberagent.android.gpuimage.sample.activity.GPUImageBeautyFilter;
 import jp.co.cyberagent.android.gpuimage.sample.activity.GPUImageYuvBeautyFilter;
 import jp.co.cyberagent.android.gpuimage.sample.activity.GPUImageYuvFilter;
+import jp.co.cyberagent.android.gpuimage.sample.activity.GPUImageYuvIdleFilter;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -134,7 +135,7 @@ public class GPUImageFilterTools {
                 //return new GPUImageBeautyFilter(4.0f);
                 return new GPUImageYuvBeautyFilter();
             case YUV:
-                return new GPUImageYuvFilter();
+                return new GPUImageYuvIdleFilter();
             case CONTRAST:
                 return new GPUImageContrastFilter(2.0f);
             case GAMMA:

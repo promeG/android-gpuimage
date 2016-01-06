@@ -26,13 +26,20 @@ import android.hardware.Camera.PreviewCallback;
 import android.hardware.Camera.Size;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView.Renderer;
+import android.os.Environment;
 import android.util.Log;
 
+import jp.co.cyberagent.android.gpuimage.util.LogToFileTree;
 import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
 import timber.log.Timber;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -126,6 +133,8 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
                 System.nanoTime() - startT));
     }
 
+    int count = 0;
+
     @Override
     public void onDrawFrame(final GL10 gl) {
         long startT = System.nanoTime();
@@ -137,6 +146,56 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
         if (mSurfaceTexture != null) {
             mSurfaceTexture.updateTexImage();
         }
+
+        if (true) {
+            long startT2 = System.nanoTime();
+
+            int width = mOutputWidth;
+            int height = mOutputHeight;
+            ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 4);
+            /*buf.order(ByteOrder.LITTLE_ENDIAN);
+            buf.rewind();
+            GLES20.glReadPixels(0, 0, width, height,
+                    GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+            OpenGlUtils.dumpGlError("glReadPixels22");*/
+            GPUImageNativeLibrary.readPixels(width, height, buf.array());
+            Timber.d("glReadPixels cost2222: " +buf.array().length + "  :   " + TimeUnit.NANOSECONDS.toMillis(
+                    System.nanoTime() - startT2));
+            Timber.d("beforeLastFilterImgAvalible  " + byteArrayToString(
+                    buf.array()));
+
+            count++;
+
+            if (count % 300 == 0) {
+                long startT3 = System.nanoTime();
+                BufferedOutputStream bos = null;
+                try {
+                    bos = new BufferedOutputStream(new FileOutputStream(
+                            Environment.getExternalStorageDirectory() + File.separator + String.valueOf(System.currentTimeMillis()) + ".png"));
+                    Bitmap bmp = Bitmap.createBitmap(mOutputWidth, mOutputHeight, Bitmap.Config.ARGB_8888);
+                    buf.rewind();
+                    bmp.copyPixelsFromBuffer(buf);
+                    bmp.compress(Bitmap.CompressFormat.PNG, 90, bos);
+                    bmp.recycle();
+                    Timber.d("save to png cost  " + TimeUnit.NANOSECONDS.toMillis(
+                            System.nanoTime() - startT3));
+
+
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (bos != null)
+                        try {
+                            bos.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                }
+            }
+
+        }
+
+
         Timber.d("onDrawFrame cost: " + TimeUnit.NANOSECONDS.toMillis(
                 System.nanoTime() - startT));
     }
@@ -150,7 +209,6 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
     }
 
 
-
     @Override
     public void onPreviewFrame(final byte[] data, final Camera camera) {
         long startT = System.nanoTime();
@@ -159,6 +217,7 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
         if (mGLRgbBuffer == null) {
             mGLRgbBuffer = ByteBuffer.allocate(previewSize.width * previewSize.height * 3 / 2);
         }
+
         if (mRunOnDraw.isEmpty()) {
             runOnDraw(new Runnable() {
                 @Override
@@ -166,11 +225,14 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
                     long startT = System.nanoTime();
                    /* GPUImageNativeLibrary.YUVtoRBGA(data, previewSize.width, previewSize.height,
                             mGLRgbBuffer.array());*/
-                   /* mGLRgbBuffer.clear();
-                    mGLRgbBuffer.put(data) ;*/
-                    mGLRgbBuffer = ByteBuffer.wrap(data);
-                    Timber.d("YUVtoRBGA cost: " + (System.nanoTime() - startT)  + "     " + data.length + "    " + (previewSize.width * previewSize.height));
-                    mGLTextureId = OpenGlUtils.loadTexture(mGLRgbBuffer, previewSize, mGLTextureId);
+                    mGLRgbBuffer.clear();
+                    if (mGLRgbBuffer.capacity() < data.length) {
+                        mGLRgbBuffer = ByteBuffer.allocate(data.length);
+                    }
+                    mGLRgbBuffer.put(data) ;
+                    //mGLRgbBuffer = ByteBuffer.wrap(data);
+                    Timber.d("YUVtoRBGA cost: " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startT)  + "     " + data.length + "    " + (previewSize.width * previewSize.height));
+                    mGLTextureId = OpenGlUtils.loadFrameTexture(mGLRgbBuffer, previewSize, mGLTextureId);
                     camera.addCallbackBuffer(data);
 
                     if (mImageWidth != previewSize.width) {
@@ -225,6 +287,14 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
                 if (oldFilter != null) {
                     oldFilter.destroy();
                 }
+                mFilter.setImageListener(new GPUImageFilter.ImageListener() {
+                    @Override
+                    public void beforeLastFilterImgAvalible(ByteBuffer byteBuffer) {
+                        Timber.d("beforeLastFilterImgAvalible  " + byteBuffer.array().length);
+                        Timber.d("beforeLastFilterImgAvalible  " + byteArrayToString(byteBuffer.array()));
+
+                    }
+                });
                 mFilter.init();
                 GLES20.glUseProgram(mFilter.getProgram());
                 mFilter.onOutputSizeChanged(mOutputWidth, mOutputHeight);

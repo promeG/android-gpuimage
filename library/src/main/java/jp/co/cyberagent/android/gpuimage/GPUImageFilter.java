@@ -22,6 +22,7 @@ import android.graphics.PointF;
 import android.opengl.GLES20;
 
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.LinkedList;
 
@@ -57,6 +58,16 @@ public class GPUImageFilter {
     protected int mOutputWidth;
     protected int mOutputHeight;
     private boolean mIsInitialized;
+    protected ImageListener mImageListener;
+
+    public void setImageListener(
+            ImageListener imageListener) {
+        mImageListener = imageListener;
+    }
+
+    public interface ImageListener{
+        void beforeLastFilterImgAvalible(ByteBuffer byteBuffer);
+    }
 
     public GPUImageFilter() {
         this(NO_FILTER_VERTEX_SHADER, NO_FILTER_FRAGMENT_SHADER);
