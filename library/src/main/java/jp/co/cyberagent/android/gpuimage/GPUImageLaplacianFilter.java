@@ -16,7 +16,7 @@
 
 package jp.co.cyberagent.android.gpuimage;
 
-import android.opengl.GLES30;
+import android.opengl.GLES20;
 
 public class GPUImageLaplacianFilter extends GPUImage3x3TextureSamplingFilter {
     public static final String LAPLACIAN_FRAGMENT_SHADER = "" +
@@ -79,7 +79,7 @@ public class GPUImageLaplacianFilter extends GPUImage3x3TextureSamplingFilter {
     @Override
     public void onInit() {
         super.onInit();
-        mUniformConvolutionMatrix = GLES30.glGetUniformLocation(getProgram(), "convolutionMatrix");
+        mUniformConvolutionMatrix = GLES20.glGetUniformLocation(getProgram(), "convolutionMatrix");
         setConvolutionKernel(mConvolutionKernel);
     }
 

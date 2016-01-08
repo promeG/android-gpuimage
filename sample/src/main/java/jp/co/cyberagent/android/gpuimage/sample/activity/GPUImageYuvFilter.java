@@ -6,7 +6,7 @@
 
 package jp.co.cyberagent.android.gpuimage.sample.activity;
 
-import android.opengl.GLES30;
+import android.opengl.GLES20;
 
 import java.util.concurrent.TimeUnit;
 

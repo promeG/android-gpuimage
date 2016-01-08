@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import jp.co.cyberagent.android.gpuimage.Configure;
 import jp.co.cyberagent.android.gpuimage.GPUImage;
 import jp.co.cyberagent.android.gpuimage.GPUImage.OnPictureSavedListener;
 import jp.co.cyberagent.android.gpuimage.GPUImageFilter;
@@ -73,7 +74,14 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
         findViewById(R.id.button_capture).setOnClickListener(this);
         mTvSeekbarView = (TextView) findViewById(R.id.tv_seekbar_value);
 
-        mGPUImage = new GPUImage(this, new GPUImageYuvFilter());
+        if (Configure.YUV2RGB_USING_SHADER) {
+            mGPUImage = new GPUImage(this, new GPUImageYuvFilter());
+        } else {
+            //mGPUImage = new GPUImage(this, new GPUImageScaleFilter());
+            mGPUImage = new GPUImage(this, new GPUImageScaleIdleFilter());
+            //mGPUImage = new GPUImage(this, new GPUImageBeauty2Filter(4.0f));
+            //mGPUImage = new GPUImage(this);
+        }
         mGPUImage.setGLSurfaceView((GLSurfaceView) findViewById(R.id.surfaceView));
 
         mCameraHelper = new CameraHelper(this);

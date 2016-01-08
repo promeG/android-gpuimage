@@ -1,9 +1,6 @@
 #include <jni.h>
-#include <android/log.h>
-#include <GLES3/gl3.h>
-//#include <GLES3/gl3ext.h>
 #include <string.h>
-
+#include <time.h>
 
 JNIEXPORT void JNICALL Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_YUVtoRBGA(JNIEnv * env, jobject obj, jbyteArray yuv420sp, jint width, jint height, jintArray rgbOut)
 {
@@ -117,35 +114,125 @@ JNIEXPORT void JNICALL Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibr
     (*env)->ReleasePrimitiveArrayCritical(env, yuv420sp, yuv, 0);
 }
 
-GLuint pbo_id;
-jboolean init = 0;
+int64_t getTimeNsec() {
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    return (int64_t) now.tv_sec*1000000000LL + now.tv_nsec;
+}
 
 JNIEXPORT void JNICALL
-Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_readPixels(JNIEnv *env, jclass type,
-                                                                        jint width, jint height,
-                                                                        jbyteArray out_) {
+Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_rgb2Yuv420p(JNIEnv *env, jclass type,
+                                                                         jbyteArray rgb_,
+                                                                         jint width, jint height,
+                                                                         jbyteArray out_) {
+    jbyte *rgb = (*env)->GetByteArrayElements(env, rgb_, NULL);
+    jbyte *out = (*env)->GetByteArrayElements(env, out_, NULL);
+
+    size_t image_size = width * height;
+    size_t upos = image_size;
+    size_t i = 0;
+
+    size_t line;
+    for( line = 0; line < height; ++line ) {
+        if( !(line % 2) ) {
+            size_t x;
+            for( x = 0; x < width; x += 2 ) {
+                uint8_t r = rgb[4 * i];
+                uint8_t g = rgb[4 * i + 1];
+                uint8_t b = rgb[4 * i + 2];
+
+                out[i++] = ((66*r + 129*g + 25*b) >> 8) + 16;
+
+                out[upos++] = ((112*r + -94*g + -18*b) >> 8) + 128;
+                out[upos++] = ((-38*r + -74*g + 112*b) >> 8) + 128;
+
+                r = rgb[4 * i];
+                g = rgb[4 * i + 1];
+                b = rgb[4 * i + 2];
+
+                out[i++] = ((66*r + 129*g + 25*b) >> 8) + 16;
+            }
+        }
+        else {
+            size_t x;
+            for( x = 0; x < width; x += 1 ) {
+                uint8_t r = rgb[4 * i];
+                uint8_t g = rgb[4 * i + 1];
+                uint8_t b = rgb[4 * i + 2];
+
+                out[i++] = ((66*r + 129*g + 25*b) >> 8) + 16;
+            }
+        }
+    }
+
+    (*env)->ReleaseByteArrayElements(env, rgb_, rgb, 0);
+    (*env)->ReleaseByteArrayElements(env, out_, out, 0);
+}
+
+JNIEXPORT void JNICALL
+Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_compressYuv(JNIEnv *env, jclass type,
+                                                                         jbyteArray yuv_,
+                                                                         jint width, jint height,
+                                                                         jbyteArray out_) {
+    jbyte *yuv = (*env)->GetByteArrayElements(env, yuv_, NULL);
     jbyte *out = (*env)->GetByteArrayElements(env, out_, NULL);
 
     // TODO
-    int pbo_size = width * height * 4;
 
-    if (!init) {
-        glGenBuffers(1, &pbo_id);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo_id);
-        glBufferData(GL_PIXEL_PACK_BUFFER, pbo_size, 0, GL_DYNAMIC_READ);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-        init = 1;
+    (*env)->ReleaseByteArrayElements(env, yuv_, yuv, 0);
+    (*env)->ReleaseByteArrayElements(env, out_, out, 0);
+}
+
+JNIEXPORT void JNICALL
+Java_jp_co_cyberagent_android_gpuimage_GPUImageNativeLibrary_rgb2Yuv420pCompress(JNIEnv *env,
+                                                                                 jclass type,
+                                                                                 jbyteArray rgb_,
+                                                                                 jint originLen,
+                                                                                 jint width,
+                                                                                 jint height,
+                                                                                 jbyteArray out_) {
+    jbyte *rgb = (*env)->GetByteArrayElements(env, rgb_, NULL);
+    jbyte *out = (*env)->GetByteArrayElements(env, out_, NULL);
+
+    // TODO
+
+    size_t image_size = width * height;
+    size_t upos = image_size;
+    size_t i = 0;
+
+    size_t line;
+    for( line = 0; line < height; ++line ) {
+        if( !(line % 2) ) {
+            size_t x;
+            for( x = 0; x < width; x += 2 ) {
+                uint8_t r = rgb[4 * i];
+                uint8_t g = rgb[4 * i + 1];
+                uint8_t b = rgb[4 * i + 2];
+
+                out[i++] = ((66*r + 129*g + 25*b) >> 8) + 16;
+
+                out[upos++] = ((112*r + -94*g + -18*b) >> 8) + 128;
+                out[upos++] = ((-38*r + -74*g + 112*b) >> 8) + 128;
+
+                r = rgb[4 * i];
+                g = rgb[4 * i + 1];
+                b = rgb[4 * i + 2];
+
+                out[i++] = ((66*r + 129*g + 25*b) >> 8) + 16;
+            }
+        }
+        else {
+            size_t x;
+            for( x = 0; x < width; x += 1 ) {
+                uint8_t r = rgb[4 * i];
+                uint8_t g = rgb[4 * i + 1];
+                uint8_t b = rgb[4 * i + 2];
+
+                out[i++] = ((66*r + 129*g + 25*b) >> 8) + 16;
+            }
+        }
     }
 
-    glReadBuffer(GL_COLOR_ATTACHMENT0);
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo_id);
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, 0);
-   /* GLubyte *ptr = glMapBufferRange(GL_PIXEL_PACK_BUFFER, 0, pbo_size, GL_MAP_READ_BIT);
-    memcpy(out, ptr, pbo_size);
-    glUnmapBuffer(GL_PIXEL_PACK_BUFFER);*/
-    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
-
-    //glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, out);
-
+    (*env)->ReleaseByteArrayElements(env, rgb_, rgb, 0);
     (*env)->ReleaseByteArrayElements(env, out_, out, 0);
 }

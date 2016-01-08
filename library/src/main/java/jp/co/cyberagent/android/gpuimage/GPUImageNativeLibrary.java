@@ -25,5 +25,9 @@ public class GPUImageNativeLibrary {
 
     public static native void YUVtoARBG(byte[] yuv, int width, int height, int[] out);
 
-    public static native void readPixels(int width, int height, byte[] out);
+    public static native void rgb2Yuv420p(byte[] rgb, int width, int height, byte[] out);
+
+    public static native void rgb2Yuv420pCompress(byte[] rgb, int originLen, int width, int height, byte[] out);
+
+    public static native void compressYuv(byte[] yuv, int width, int height, byte[] out);
 }

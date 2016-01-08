@@ -16,7 +16,7 @@
 
 package jp.co.cyberagent.android.gpuimage;
 
-import android.opengl.GLES30;
+import android.opengl.GLES20;
 
 /**
  * Reduces the color range of the image. <br>
@@ -52,7 +52,7 @@ public class GPUImagePosterizeFilter extends GPUImageFilter {
     @Override
     public void onInit() {
         super.onInit();
-        mGLUniformColorLevels = GLES30.glGetUniformLocation(getProgram(), "colorLevels");
+        mGLUniformColorLevels = GLES20.glGetUniformLocation(getProgram(), "colorLevels");
         setColorLevels(mColorLevels);
     }
 

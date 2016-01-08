@@ -1,6 +1,6 @@
 package jp.co.cyberagent.android.gpuimage;
 
-import android.opengl.GLES30;
+import android.opengl.GLES20;
 
 public class GPUImageSobelThresholdFilter extends
 		GPUImage3x3TextureSamplingFilter {
@@ -58,7 +58,7 @@ public class GPUImageSobelThresholdFilter extends
     @Override
     public void onInit() {
     	super.onInit();
-    	mUniformThresholdLocation = GLES30.glGetUniformLocation(getProgram(), "threshold");
+    	mUniformThresholdLocation = GLES20.glGetUniformLocation(getProgram(), "threshold");
     }
     
     @Override
