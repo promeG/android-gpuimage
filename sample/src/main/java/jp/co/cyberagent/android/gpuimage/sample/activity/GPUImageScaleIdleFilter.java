@@ -21,11 +21,12 @@ public class GPUImageScaleIdleFilter extends GPUImageFilterGroup {
     static final List <GPUImageFilter> list = new ArrayList<>();
 
     static {
-        list.add(new GPUImageBeautyFilter(4.0f));
+        //list.add(new GPUImageBeautyFilter(4.0f));
         //list.add(new GPUImageBilateralFilter(4.0f));
         //list.add(new GPUImageFilter());
         list.add(new GPUImageFilter());
-        //list.add(new GPUImageFilter());
+        list.add(new GPUImageFilter());
+        list.add(new GPUImageFilter());
         //list.add(new GPUImageScaleFilter());
     }
 

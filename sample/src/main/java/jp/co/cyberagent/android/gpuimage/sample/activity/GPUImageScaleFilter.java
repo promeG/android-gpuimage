@@ -223,7 +223,7 @@ public class GPUImageScaleFilter extends GPUImageFilter {
 
     @Override
     public void onOutputSizeChanged(int width, int height) {
-	super.onOutputSizeChanged(1080, 1784);
+	super.onOutputSizeChanged(width, height);
 	initTexelOffsets();
     }
 }

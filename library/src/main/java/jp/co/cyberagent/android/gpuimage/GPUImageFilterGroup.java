@@ -17,15 +17,22 @@
 package jp.co.cyberagent.android.gpuimage;
 
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
+import android.util.Log;
+
 import jp.co.cyberagent.android.gpuimage.util.TextureRotationUtil;
 import timber.log.Timber;
 
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static jp.co.cyberagent.android.gpuimage.GPUImageRenderer.CUBE;
@@ -45,6 +52,9 @@ public class GPUImageFilterGroup extends GPUImageFilter {
     private final FloatBuffer mGLCubeBuffer;
     private final FloatBuffer mGLTextureBuffer;
     private final FloatBuffer mGLTextureFlipBuffer;
+
+    private final FloatBuffer mGLCubeBuffer2;
+    private final FloatBuffer mGLTextureBuffer2;
 
     /**
      * Instantiates a new GPUImageFilterGroup with no filters.
@@ -81,6 +91,17 @@ public class GPUImageFilterGroup extends GPUImageFilter {
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer();
         mGLTextureFlipBuffer.put(flipTexture).position(0);
+
+
+        mGLCubeBuffer2 = ByteBuffer.allocateDirect(CUBE.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+        mGLCubeBuffer2.put(CUBE).position(0);
+
+        mGLTextureBuffer2 = ByteBuffer.allocateDirect(TEXTURE_NO_ROTATION.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+        mGLTextureBuffer2.put(TEXTURE_NO_ROTATION).position(0);
     }
 
     public void addFilter(GPUImageFilter aFilter) {
@@ -134,16 +155,20 @@ public class GPUImageFilterGroup extends GPUImageFilter {
      * int)
      */
     @Override
-    public void onOutputSizeChanged(final int width, final int height) {
+    public void onOutputSizeChanged( int width,  int height) {
+        width = Configure.WIDTH;
+        height = Configure.HEIGHT;
         super.onOutputSizeChanged(width, height);
         if (mFrameBuffers != null) {
             destroyFramebuffers();
         }
 
         int size = mFilters.size();
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < size - 1; i++) {
             mFilters.get(i).onOutputSizeChanged(width, height);
         }
+
+        mFilters.get(size - 1).onOutputSizeChanged(Configure.VIEW_WIDTH, Configure.VIEW_HEIGHT);
 
         if (mMergedFilters != null && mMergedFilters.size() > 0) {
             size = mMergedFilters.size();
@@ -196,28 +221,46 @@ public class GPUImageFilterGroup extends GPUImageFilter {
                 if (isNotLast) {
                     GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFrameBuffers[i]);
                     GLES20.glClearColor(0, 0, 0, 0);
+                    GLES20.glViewport(0, 0, Configure.WIDTH, Configure.HEIGHT);
+                    mOutputWidth = Configure.WIDTH;
+                    mOutputHeight = Configure.HEIGHT;
+                } else {
+                    Timber.d("glViewport 1080  1784");
+                    GLES20.glViewport(0, 0, Configure.VIEW_WIDTH, Configure.VIEW_HEIGHT);
+                    OpenGlUtils.dumpGlError("glViewport");
+                    mOutputWidth = Configure.VIEW_WIDTH;
+                    mOutputHeight = Configure.VIEW_HEIGHT;
                 }
 
                 if (i == 0) {
                     filter.onDraw(previousTexture, cubeBuffer, textureBuffer);
-                    if (true) {
-                        long startT = System.nanoTime();
-                        int width = mOutputWidth;
-                        int height = mOutputHeight;
-                        ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 4);
-                        buf.order(ByteOrder.LITTLE_ENDIAN);
-                        GLES20.glReadPixels(0, 0, width, height,
-                                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
-                        OpenGlUtils.dumpGlError("glReadPixels");
-                        buf.rewind();
-                        //mImageListener.beforeLastFilterImgAvalible(buf);
-                        Timber.d("glReadPixels cost: " + TimeUnit.NANOSECONDS.toMillis(
-                                System.nanoTime() - startT));
-                    }
                 } else if (i == size - 1) {
-                    filter.onDraw(previousTexture, mGLCubeBuffer, (size % 2 == 0) ? mGLTextureFlipBuffer : mGLTextureBuffer);
+                    //filter.onDraw(previousTexture, mGLCubeBuffer, (size % 2 == 0) ? mGLTextureFlipBuffer : mGLTextureBuffer);
+                    adjustImageScaling();
+                    filter.onDraw(previousTexture, mGLCubeBuffer2, mGLTextureBuffer2);
                 } else {
                     filter.onDraw(previousTexture, mGLCubeBuffer, mGLTextureBuffer);
+                    if (i == 1) {
+                        if (true) {
+                            long startT = System.nanoTime();
+                            int width = mOutputWidth;
+                            int height = mOutputHeight;
+                            ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 4);
+                            buf.order(ByteOrder.LITTLE_ENDIAN);
+                            GLES20.glReadPixels(0, 0, width, height,
+                                    GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+                            OpenGlUtils.dumpGlError("glReadPixels");
+                            buf.rewind();
+                            //mImageListener.beforeLastFilterImgAvalible(buf);
+                            Timber.d("glReadPixels cost: " + TimeUnit.NANOSECONDS.toMillis(
+                                    System.nanoTime() - startT) + "     " + width + "  :  " + height);
+
+                            count++;
+                            if (count % 100 == 0) {
+                                saveTestBitmap(buf);
+                            }
+                        }
+                    }
                 }
 
                 if (isNotLast) {
@@ -227,6 +270,87 @@ public class GPUImageFilterGroup extends GPUImageFilter {
             }
         }
      }
+
+
+    private void saveTestBitmap(ByteBuffer buf) {
+        // Save the generated bitmap to a PNG so we can see what it looks like.
+        String filename = "/sdcard/test-" + System.currentTimeMillis() + ".png";
+        Timber.d("Creating " + filename);
+        BufferedOutputStream bos = null;
+        try {
+            bos = new BufferedOutputStream(new FileOutputStream(filename));
+            Bitmap bmp = Bitmap.createBitmap(Configure.WIDTH, Configure.HEIGHT, Bitmap.Config.ARGB_8888);
+            bmp.copyPixelsFromBuffer(buf);
+            bmp.compress(Bitmap.CompressFormat.PNG, 90, bos);
+            bmp.recycle();
+        } catch (IOException ioe) {
+            Timber.d("Failed to create " + filename, ioe);
+        } finally {
+            if (bos != null) {
+                try {
+                    bos.close();
+                } catch (IOException ioe) {
+                    Timber.d("Failed to close " + filename, ioe);
+                }
+            }
+        }
+    }
+
+    int count = 0;
+
+    Rotation mRotation = Rotation.NORMAL;
+    int mImageWidth = Configure.WIDTH;
+    int mImageHeight = Configure.HEIGHT;
+    GPUImage.ScaleType mScaleType = GPUImage.ScaleType.CENTER_CROP;
+    private void adjustImageScaling() {
+        long startT = System.nanoTime();
+        float outputWidth = mOutputWidth;
+        float outputHeight = mOutputHeight;
+        if (mRotation == Rotation.ROTATION_270 || mRotation == Rotation.ROTATION_90) {
+            outputWidth = mOutputHeight;
+            outputHeight = mOutputWidth;
+        }
+
+        float ratio1 = outputWidth / mImageWidth;
+        float ratio2 = outputHeight / mImageHeight;
+        float ratioMax = Math.max(ratio1, ratio2);
+        int imageWidthNew = Math.round(mImageWidth * ratioMax);
+        int imageHeightNew = Math.round(mImageHeight * ratioMax);
+
+        float ratioWidth = imageWidthNew / outputWidth;
+        float ratioHeight = imageHeightNew / outputHeight;
+
+        float[] cube = CUBE;
+        float[] textureCords = TextureRotationUtil.getRotation(mRotation, false, false);
+        if (mScaleType == GPUImage.ScaleType.CENTER_CROP) {
+            float distHorizontal = (1 - 1 / ratioWidth) / 2;
+            float distVertical = (1 - 1 / ratioHeight) / 2;
+            textureCords = new float[]{
+                    addDistance(textureCords[0], distHorizontal), addDistance(textureCords[1], distVertical),
+                    addDistance(textureCords[2], distHorizontal), addDistance(textureCords[3], distVertical),
+                    addDistance(textureCords[4], distHorizontal), addDistance(textureCords[5], distVertical),
+                    addDistance(textureCords[6], distHorizontal), addDistance(textureCords[7], distVertical),
+            };
+        } else {
+            cube = new float[]{
+                    CUBE[0] / ratioHeight, CUBE[1] / ratioWidth,
+                    CUBE[2] / ratioHeight, CUBE[3] / ratioWidth,
+                    CUBE[4] / ratioHeight, CUBE[5] / ratioWidth,
+                    CUBE[6] / ratioHeight, CUBE[7] / ratioWidth,
+            };
+        }
+
+        mGLCubeBuffer2.clear();
+        mGLCubeBuffer2.put(cube).position(0);
+        mGLTextureBuffer2.clear();
+        mGLTextureBuffer2.put(textureCords).position(0);
+        Timber.d("adjustImageScaling cost: " + TimeUnit.NANOSECONDS.toMillis(
+                System.nanoTime() - startT));
+    }
+
+    private float addDistance(float coordinate, float distance) {
+        return coordinate == 0.0f ? distance : 1 - distance;
+    }
 
     /**
      * Gets the filters.

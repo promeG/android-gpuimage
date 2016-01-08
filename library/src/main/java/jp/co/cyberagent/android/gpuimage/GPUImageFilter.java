@@ -26,6 +26,8 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.LinkedList;
 
+import timber.log.Timber;
+
 public class GPUImageFilter {
     public static final String NO_FILTER_VERTEX_SHADER = "" +
             "attribute vec4 position;\n" +
@@ -111,8 +113,21 @@ public class GPUImageFilter {
         mOutputHeight = height;
     }
 
+    private void printFloatBuffer(final FloatBuffer buffer) {
+        for (int i = 0; i < buffer.capacity(); i++) {
+            Timber.d("floatBuffer  " + buffer.get(i));
+        }
+    }
+
     public void onDraw(final int textureId, final FloatBuffer cubeBuffer,
                        final FloatBuffer textureBuffer) {
+        Timber.d("floatBuffer   cubeBuffer  " + mOutputWidth + "  :  " + mOutputHeight);
+        printFloatBuffer(cubeBuffer);
+        Timber.d("floatBuffer   textureBuffer");
+        printFloatBuffer(textureBuffer);
+        cubeBuffer.position(0);
+        textureBuffer.position(0);
+
         GLES20.glUseProgram(mGLProgId);
         runPendingOnDrawTasks();
         if (!mIsInitialized) {

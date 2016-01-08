@@ -9,4 +9,7 @@ public class Configure {
 
     public static final int WIDTH = 480;
     public static final int HEIGHT = 640;
+
+    public static final int VIEW_WIDTH = 1080;
+    public static final int VIEW_HEIGHT = 1984;
 }
