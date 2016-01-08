@@ -18,6 +18,7 @@ package jp.co.cyberagent.android.gpuimage;
 
 public class GPUImageNativeLibrary {
     static {
+        System.loadLibrary("gnustl_shared");
         System.loadLibrary("gpuimage-library");
     }
 

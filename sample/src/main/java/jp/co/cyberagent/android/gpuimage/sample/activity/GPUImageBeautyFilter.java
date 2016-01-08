@@ -45,11 +45,11 @@ public class GPUImageBeautyFilter extends GPUImageTwoPassTextureSamplingFilter {
     public static final String FRAGMENT_SHADER =
 	    "uniform sampler2D inputImageTexture;\n" +
 		    "const lowp int GAUSSIAN_SAMPLES = 9;\n" +
-		    "varying highp vec2 textureCoordinate;\n" +
-		    "varying highp vec2 blurCoordinates[GAUSSIAN_SAMPLES];\n" +
+		    "varying mediump vec2 textureCoordinate;\n" +
+		    "varying mediump vec2 blurCoordinates[GAUSSIAN_SAMPLES];\n" +
 		    "\n" +
 		    "uniform mediump float distanceNormalizationFactor;\n" +
-		    " const float smoothDegree = 0.6;\n" +
+		    "const mediump float smoothDegree = 0.6;\n" +
 		    "\n" +
 		    "void main()\n" +
 		    "{\n" +
@@ -59,7 +59,7 @@ public class GPUImageBeautyFilter extends GPUImageTwoPassTextureSamplingFilter {
 		    "lowp vec4 sampleColor;\n" +
 		    "lowp float distanceFromCentralColor;\n" +
 		    "lowp float gaussianWeight;\n" +
-		    "highp vec4 origin = texture2D(inputImageTexture,textureCoordinate);\n" +
+		    "mediump vec4 origin = texture2D(inputImageTexture,textureCoordinate);\n" +
 		    "\n" +
 		    "centralColor = texture2D(inputImageTexture, blurCoordinates[4]);\n" +
 		    "gaussianWeightTotal = 0.18;\n" +
@@ -113,21 +113,21 @@ public class GPUImageBeautyFilter extends GPUImageTwoPassTextureSamplingFilter {
 		    "gaussianWeightTotal += gaussianWeight;\n" +
 		    "sum += sampleColor * gaussianWeight;\n" +
 		    "\n" +
-		    "highp vec4 bilateral = sum / gaussianWeightTotal;\n" +
-		    "     highp vec4 smooth;\n" +
+		    "mediump vec4 bilateral = sum / gaussianWeightTotal;\n" +
+		    "     mediump vec4 smoothOut;\n" +
 		    "     lowp float r = origin.r;\n" +
 		    "     lowp float g = origin.g;\n" +
 		    "     lowp float b = origin.b;\n" +
 		    "     if (r > 0.3725 && g > 0.1568 && b > 0.0784 && r > b && (max(max(r, g), b) - min(min(r, g), b)) > 0.0588 && abs(r-g) > 0.0588) {\n" +
-		    "         smooth = (1.0 - smoothDegree) * (origin - bilateral) + bilateral;\n" +
+		    "         smoothOut = (1.0 - smoothDegree) * (origin - bilateral) + bilateral;\n" +
 		    "     }\n" +
 		    "     else {\n" +
-		    "         smooth = origin;\n" +
+		    "         smoothOut = origin;\n" +
 		    "     }\n" +
-		    "     smooth.r = log(1.0 + 0.2 * smooth.r)/log(1.2);\n" +
-		    "     smooth.g = log(1.0 + 0.2 * smooth.g)/log(1.2);\n" +
-		    "     smooth.b = log(1.0 + 0.2 * smooth.b)/log(1.2);\n" +
-		    "gl_FragColor = smooth;\n" +
+		    "     smoothOut.r = log(1.0 + 0.2 * smoothOut.r)/log(1.2);\n" +
+		    "     smoothOut.g = log(1.0 + 0.2 * smoothOut.g)/log(1.2);\n" +
+		    "     smoothOut.b = log(1.0 + 0.2 * smoothOut.b)/log(1.2);\n" +
+		    "gl_FragColor = smoothOut;\n" +
 		    "}\n";
 
 

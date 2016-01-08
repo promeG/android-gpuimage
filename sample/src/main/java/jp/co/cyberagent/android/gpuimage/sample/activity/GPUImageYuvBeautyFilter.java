@@ -25,7 +25,6 @@ public class GPUImageYuvBeautyFilter extends GPUImageFilterGroup {
             list.add(new GPUImageYuvFilter());
         }
 	list.add(new GPUImageBeautyFilter(4.0f));
-	list.add(new GPUImageScaleFilter());
     }
 
     public GPUImageYuvBeautyFilter() {

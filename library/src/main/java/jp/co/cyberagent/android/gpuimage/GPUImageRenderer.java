@@ -106,20 +106,17 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
 
     @Override
     public void onSurfaceCreated(final GL10 unused, final EGLConfig config) {
-        long startT = System.nanoTime();
-
         GLES20.glDisable(GL10.GL_DITHER);
         GLES20.glClearColor(0, 0, 0, 0);
         GLES20.glEnable(GL10.GL_CULL_FACE);
         GLES20.glEnable(GL10.GL_DEPTH_TEST);
         mFilter.init();
-        Timber.d("onSurfaceCreated cost: " + TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - startT));
     }
 
     @Override
     public void onSurfaceChanged(final GL10 gl, final int width, final int height) {
-        long startT = System.nanoTime();
+        Configure.VIEW_HEIGHT = height;
+        Configure.VIEW_WIDTH = width;
 
         mOutputWidth = width;
         mOutputHeight = height;
@@ -130,14 +127,10 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
         synchronized (mSurfaceChangedWaiter) {
             mSurfaceChangedWaiter.notifyAll();
         }
-        Timber.d("onSurfaceCreated cost: " + TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - startT));
     }
 
     @Override
     public void onDrawFrame(final GL10 gl) {
-        long startT = System.nanoTime();
-
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         runAll(mRunOnDraw);
         mFilter.onDraw(mGLTextureId, mGLCubeBuffer, mGLTextureBuffer);
@@ -145,8 +138,6 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
         if (mSurfaceTexture != null) {
             mSurfaceTexture.updateTexImage();
         }
-        Timber.d("onDrawFrame cost: " + TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - startT));
     }
 
     private void runAll(Queue<Runnable> queue) {
@@ -160,8 +151,6 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
 
     @Override
     public void onPreviewFrame(final byte[] data, final Camera camera) {
-        long startT = System.nanoTime();
-
         final Size previewSize = camera.getParameters().getPreviewSize();
         if (mGLRgbBuffer == null) {
             mGLRgbBuffer = ByteBuffer.allocate(previewSize.width * previewSize.height);
@@ -188,7 +177,12 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
                         mGLRgbBuffer.put(data);
                         mGLTextureId = OpenGlUtils.loadFrameTexture(mGLRgbBuffer, previewSize, mGLTextureId);
                     }
-                    Timber.d("YUVtoRBGA cost: " + TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startT)  + "     " + data.length + "    " + (previewSize.width * previewSize.height));
+                    if (Configure.DEBUG_LOG) {
+                        Timber.d("YUVtoRBGA cost: " + TimeUnit.NANOSECONDS
+                                .toMillis(System.nanoTime() - startT) + "     " + data.length
+                                + "    " + (previewSize.width * previewSize.height)
+                                + "    " + previewSize.width + "    :    " + previewSize.height);
+                    }
                     camera.addCallbackBuffer(data);
 
                     if (mImageWidth != previewSize.width) {
@@ -196,26 +190,24 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
                         mImageHeight = previewSize.height;
                         adjustImageScaling();
                     }
-                    Timber.d("mRunOnDraw cost: " + TimeUnit.NANOSECONDS
-                            .toMillis(System.nanoTime() - startT));
                 }
             });
         }
-        Timber.d("onPreviewFrame cost: " + TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - startT));
     }
 
     public void setUpSurfaceTexture(final Camera camera) {
         runOnDraw(new Runnable() {
             @Override
             public void run() {
-                long startT = System.nanoTime();
                 int[] textures = new int[1];
                 GLES20.glGenTextures(1, textures, 0);
                 mSurfaceTexture = new SurfaceTexture(textures[0]);
                 try {
+                    Camera.Parameters parameters = camera.getParameters();
+                    parameters.setPreviewSize(Configure.HEIGHT, Configure.WIDTH);
+
+                    camera.setParameters(parameters);
                     camera.setPreviewTexture(mSurfaceTexture);
-                    //camera.setPreviewCallback(GPUImageRenderer.this);
                     camera.setPreviewCallbackWithBuffer(GPUImageRenderer.this);
                     Size previewSize = camera.getParameters().getPreviewSize();
                         PixelFormat p = new PixelFormat();
@@ -226,8 +218,6 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                Timber.d("setUpSurfaceTexture cost: " + TimeUnit.NANOSECONDS.toMillis(
-                        System.nanoTime() - startT));
             }
         });
     }
@@ -247,7 +237,6 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
                     @Override
                     public void beforeLastFilterImgAvalible(ByteBuffer byteBuffer) {
                         Timber.d("beforeLastFilterImgAvalible  " + byteBuffer.array().length);
-                        Timber.d("beforeLastFilterImgAvalible  " + byteArrayToString(byteBuffer.array()));
 
                     }
                 });
@@ -329,7 +318,6 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
     }
 
     private void adjustImageScaling() {
-        long startT = System.nanoTime();
         float outputWidth = mOutputWidth;
         float outputHeight = mOutputHeight;
         if (mRotation == Rotation.ROTATION_270 || mRotation == Rotation.ROTATION_90) {
@@ -370,8 +358,6 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
         mGLCubeBuffer.put(cube).position(0);
         mGLTextureBuffer.clear();
         mGLTextureBuffer.put(textureCords).position(0);
-        Timber.d("adjustImageScaling cost: " + TimeUnit.NANOSECONDS.toMillis(
-                System.nanoTime() - startT));
     }
 
     private float addDistance(float coordinate, float distance) {
@@ -418,25 +404,4 @@ public class GPUImageRenderer implements Renderer, PreviewCallback {
             mRunOnDrawEnd.add(runnable);
         }
     }
-    private static String byteArrayToString(byte[] bytes) {
-        StringBuilder builder = new StringBuilder("[");
-        for (int i = 0; i < bytes.length && builder.length() < 20; i++) {
-            if (builder.length() > 20) {
-                return builder.append("] (" + i + ":" + bytes.length + ")").toString();
-            }
-            if (i > 0) {
-                builder.append(", ");
-            }
-            builder.append(byteToString(bytes[i]));
-        }
-        return builder.append(']').toString();
-    }
-
-    private static String byteToString(Byte b) {
-        if (b == null) {
-            return "null";
-        }
-        return "0x" + String.format("%02x", b).toUpperCase(Locale.US);
-    }
-
 }

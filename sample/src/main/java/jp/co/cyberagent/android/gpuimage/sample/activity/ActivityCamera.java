@@ -74,14 +74,8 @@ public class ActivityCamera extends Activity implements OnSeekBarChangeListener,
         findViewById(R.id.button_capture).setOnClickListener(this);
         mTvSeekbarView = (TextView) findViewById(R.id.tv_seekbar_value);
 
-        if (Configure.YUV2RGB_USING_SHADER) {
-            mGPUImage = new GPUImage(this, new GPUImageYuvFilter());
-        } else {
-            //mGPUImage = new GPUImage(this, new GPUImageScaleFilter());
-            mGPUImage = new GPUImage(this, new GPUImageScaleIdleFilter());
-            //mGPUImage = new GPUImage(this, new GPUImageBeauty2Filter(4.0f));
-            //mGPUImage = new GPUImage(this);
-        }
+        mGPUImage = new GPUImage(this, new GPUImageScaleIdleFilter());
+
         mGPUImage.setGLSurfaceView((GLSurfaceView) findViewById(R.id.surfaceView));
 
         mCameraHelper = new CameraHelper(this);

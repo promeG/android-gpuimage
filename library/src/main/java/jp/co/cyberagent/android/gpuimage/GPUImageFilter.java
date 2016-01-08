@@ -121,12 +121,14 @@ public class GPUImageFilter {
 
     public void onDraw(final int textureId, final FloatBuffer cubeBuffer,
                        final FloatBuffer textureBuffer) {
-        Timber.d("floatBuffer   cubeBuffer  " + mOutputWidth + "  :  " + mOutputHeight);
-        printFloatBuffer(cubeBuffer);
-        Timber.d("floatBuffer   textureBuffer");
-        printFloatBuffer(textureBuffer);
-        cubeBuffer.position(0);
-        textureBuffer.position(0);
+        if (Configure.DEBUG_LOG) {
+            Timber.d("floatBuffer   cubeBuffer  " + mOutputWidth + "  :  " + mOutputHeight);
+            printFloatBuffer(cubeBuffer);
+            Timber.d("floatBuffer   textureBuffer");
+            printFloatBuffer(textureBuffer);
+            cubeBuffer.position(0);
+            textureBuffer.position(0);
+        }
 
         GLES20.glUseProgram(mGLProgId);
         runPendingOnDrawTasks();
